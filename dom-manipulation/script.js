@@ -1,5 +1,5 @@
 // ========== CONFIG ==========
-const SERVER_URL = "https://mocki.io/v1/60cdb984-3f34-4436-8d12-56db3b503842"; // Simulated server URL
+const SERVER_URL = "https://jsonplaceholder.typicode.com/posts"; // JSONPlaceholder for fetch and post
 const SYNC_INTERVAL = 30000; // 30 seconds
 
 // ========== DATA HANDLING ==========
@@ -91,6 +91,7 @@ function addQuote() {
   quotes.push(newQuote);
   saveQuotes();
   populateCategories();
+  postQuotesToServer(); // Post new quote to server
 
   textInput.value = "";
   categoryInput.value = "";
@@ -134,6 +135,7 @@ function importFromJsonFile(event) {
       quotes.push(...validQuotes);
       saveQuotes();
       populateCategories();
+      postQuotesToServer(); // Post imported quotes to server
       alert("Quotes imported successfully!");
     } catch (err) {
       alert("Error importing quotes: " + err.message);
@@ -168,13 +170,18 @@ function filterQuotes() {
 
 // ========== SYNC WITH SERVER ==========
 
-function syncWithServer() {
+function fetchQuotesFromServer() {
   fetch(SERVER_URL)
     .then(response => {
       if (!response.ok) throw new Error("Failed to fetch from server.");
       return response.json();
     })
-    .then(serverQuotes => {
+    .then(serverData => {
+      // Map JSONPlaceholder response to quote format
+      const serverQuotes = serverData.map(item => ({
+        text: item.title, // Using 'title' as quote text
+        category: item.body.slice(0, 20) // Using first 20 chars of 'body' as category (for demo)
+      }));
       const updated = mergeServerQuotes(serverQuotes);
       if (updated) {
         populateCategories();
@@ -182,7 +189,25 @@ function syncWithServer() {
       }
     })
     .catch(err => {
-      console.warn("Sync failed:", err.message);
+      console.warn("Fetch failed:", err.message);
+    });
+}
+
+function postQuotesToServer() {
+  fetch(SERVER_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(quotes)
+  })
+    .then(response => {
+      if (!response.ok) throw new Error("Failed to post to server.");
+      return response.json();
+    })
+    .then(() => {
+      showNotification("Quotes posted to server.");
+    })
+    .catch(err => {
+      console.warn("Post failed:", err.message);
     });
 }
 
@@ -233,12 +258,12 @@ function restoreLastQuote() {
 
 // ========== INIT ==========
 
-newQuoteBtn.addEventListener('click', showRandomQuote);
 createAddQuoteForm();
+newQuoteBtn.addEventListener('click', showRandomQuote);
 populateCategories();
 filterQuotes();
 restoreLastQuote();
 
 // Start periodic server sync
-setInterval(syncWithServer, SYNC_INTERVAL);
-syncWithServer(); // Initial sync
+setInterval(fetchQuotesFromServer, SYNC_INTERVAL);
+fetchQuotesFromServer(); // Initial sync
