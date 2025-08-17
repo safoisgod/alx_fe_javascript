@@ -170,45 +170,39 @@ function filterQuotes() {
 
 // ========== SYNC WITH SERVER ==========
 
-function fetchQuotesFromServer() {
-  fetch(SERVER_URL)
-    .then(response => {
-      if (!response.ok) throw new Error("Failed to fetch from server.");
-      return response.json();
-    })
-    .then(serverData => {
-      // Map JSONPlaceholder response to quote format
-      const serverQuotes = serverData.map(item => ({
-        text: item.title, // Using 'title' as quote text
-        category: item.body.slice(0, 20) // Using first 20 chars of 'body' as category (for demo)
-      }));
-      const updated = mergeServerQuotes(serverQuotes);
-      if (updated) {
-        populateCategories();
-        filterQuotes();
-      }
-    })
-    .catch(err => {
-      console.warn("Fetch failed:", err.message);
-    });
+async function fetchQuotesFromServer() {
+  try {
+    const response = await fetch(SERVER_URL);
+    if (!response.ok) throw new Error("Failed to fetch from server.");
+    const serverData = await response.json();
+    // Map JSONPlaceholder response to quote format
+    const serverQuotes = serverData.map(item => ({
+      text: item.title, // Using 'title' as quote text
+      category: item.body.slice(0, 20) // Using first 20 chars of 'body' as category
+    }));
+    const updated = mergeServerQuotes(serverQuotes);
+    if (updated) {
+      populateCategories();
+      filterQuotes();
+    }
+  } catch (err) {
+    console.warn("Fetch failed:", err.message);
+  }
 }
 
-function postQuotesToServer() {
-  fetch(SERVER_URL, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(quotes)
-  })
-    .then(response => {
-      if (!response.ok) throw new Error("Failed to post to server.");
-      return response.json();
-    })
-    .then(() => {
-      showNotification("Quotes posted to server.");
-    })
-    .catch(err => {
-      console.warn("Post failed:", err.message);
+async function postQuotesToServer() {
+  try {
+    const response = await fetch(SERVER_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(quotes)
     });
+    if (!response.ok) throw new Error("Failed to post to server.");
+    await response.json();
+    showNotification("Quotes posted to server.");
+  } catch (err) {
+    console.warn("Post failed:", err.message);
+  }
 }
 
 function mergeServerQuotes(serverQuotes) {
