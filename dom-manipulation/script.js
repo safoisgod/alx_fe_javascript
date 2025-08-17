@@ -247,7 +247,7 @@ function mergeServerQuotes(serverQuotes) {
 
   if (localChanged) {
     saveQuotes();
-    showNotification(conflictsResolved ? "Quotes synced with conflicts resolved." : "Quotes synced from server.");
+    showNotification(conflictsResolved ? "Quotes synced with conflicts resolved." : "Quotes synced with server!");
   }
 
   return localChanged;
