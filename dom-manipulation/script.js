@@ -170,7 +170,7 @@ function filterQuotes() {
 
 // ========== SYNC WITH SERVER ==========
 
-async function fetchQuotesFromServer() {
+async function syncQuotes() {
   try {
     const response = await fetch(SERVER_URL);
     if (!response.ok) throw new Error("Failed to fetch from server.");
@@ -186,7 +186,7 @@ async function fetchQuotesFromServer() {
       filterQuotes();
     }
   } catch (err) {
-    console.warn("Fetch failed:", err.message);
+    console.warn("Sync failed:", err.message);
   }
 }
 
@@ -259,5 +259,5 @@ filterQuotes();
 restoreLastQuote();
 
 // Start periodic server sync
-setInterval(fetchQuotesFromServer, SYNC_INTERVAL);
-fetchQuotesFromServer(); // Initial sync
+setInterval(syncQuotes, SYNC_INTERVAL);
+syncQuotes(); // Initial sync
