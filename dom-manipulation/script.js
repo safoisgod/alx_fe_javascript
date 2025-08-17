@@ -33,7 +33,6 @@ let quotes = loadQuotes();
 
 const quoteDisplay = document.getElementById('quoteDisplay');
 const newQuoteBtn = document.getElementById('newQuote');
-const addQuoteBtn = document.getElementById('addQuoteBtn');
 const categoryFilter = document.getElementById('categoryFilter');
 const notification = document.getElementById('notification');
 
@@ -43,6 +42,15 @@ function showNotification(msg, duration = 3000) {
   notification.textContent = msg;
   notification.style.display = 'block';
   setTimeout(() => notification.style.display = 'none', duration);
+}
+
+function createAddQuoteForm() {
+  const formDiv = document.getElementById('addQuoteForm');
+  formDiv.innerHTML = `
+    <input id="newQuoteText" type="text" placeholder="Enter a new quote" />
+    <input id="newQuoteCategory" type="text" placeholder="Enter quote category" />
+    <button id="addQuoteBtn" onclick="addQuote()">Add Quote</button>
+  `;
 }
 
 // ========== QUOTE FUNCTIONS ==========
@@ -126,7 +134,7 @@ function importFromJsonFile(event) {
       quotes.push(...validQuotes);
       saveQuotes();
       populateCategories();
-      showNotification("Quotes imported successfully!");
+      alert("Quotes imported successfully!");
     } catch (err) {
       alert("Error importing quotes: " + err.message);
     }
@@ -171,7 +179,6 @@ function syncWithServer() {
       if (updated) {
         populateCategories();
         filterQuotes();
-        showNotification("Quotes synced from server.");
       }
     })
     .catch(err => {
@@ -181,18 +188,26 @@ function syncWithServer() {
 
 function mergeServerQuotes(serverQuotes) {
   let localChanged = false;
+  let conflictsResolved = false;
 
   serverQuotes.forEach(serverQuote => {
     const index = quotes.findIndex(q => q.text === serverQuote.text);
 
     if (index !== -1) {
-      // Conflict: same text, different category
       if (quotes[index].category !== serverQuote.category) {
-        quotes[index] = serverQuote;
+        const userChoice = confirm(
+          `Conflict detected for quote: "${serverQuote.text}"\n` +
+          `Local category: ${quotes[index].category}\n` +
+          `Server category: ${serverQuote.category}\n` +
+          `Keep server version? (Click OK for server, Cancel for local)`
+        );
+        if (userChoice) {
+          quotes[index] = serverQuote;
+          conflictsResolved = true;
+        }
         localChanged = true;
       }
     } else {
-      // New quote from server
       quotes.push(serverQuote);
       localChanged = true;
     }
@@ -200,6 +215,7 @@ function mergeServerQuotes(serverQuotes) {
 
   if (localChanged) {
     saveQuotes();
+    showNotification(conflictsResolved ? "Quotes synced with conflicts resolved." : "Quotes synced from server.");
   }
 
   return localChanged;
@@ -218,8 +234,7 @@ function restoreLastQuote() {
 // ========== INIT ==========
 
 newQuoteBtn.addEventListener('click', showRandomQuote);
-addQuoteBtn.addEventListener('click', addQuote);
-
+createAddQuoteForm();
 populateCategories();
 filterQuotes();
 restoreLastQuote();
